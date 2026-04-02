@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>StablePay – Working Prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=Cabinet+Grotesk:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#06070D;--bg2:#0C0E1A;--bg3:#111420;
+  --glass:rgba(255,255,255,0.04);--glass2:rgba(255,255,255,0.07);--glass3:rgba(255,255,255,0.10);
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);
+  --text:#F4F6FF;--muted:#7880A4;--dim:#3D4266;
+  --accent:#4F6EF7;--accent2:#7B94FF;--accentg:rgba(79,110,247,0.15);
+  --green:#0ECFA8;--greeng:rgba(14,207,168,0.12);
+  --gold:#F0B429;--goldg:rgba(240,180,41,0.12);
+  --red:#F75F6E;--redg:rgba(247,95,110,0.12);
+  --r:18px;--rsm:10px;
+  --font-h:'Clash Display',sans-serif;--font-b:'Cabinet Grotesk',sans-serif;
+}
+body{background:#030408;font-family:var(--font-b);display:flex;justify-content:center;min-height:100vh;padding:20px 12px 40px;overflow-x:hidden;}
+
+/* PHONE */
+.phone{width:390px;background:var(--bg);border-radius:50px;overflow:hidden;
+  box-shadow:0 0 0 1px rgba(255,255,255,0.07),0 40px 120px rgba(0,0,0,0.9),0 0 80px rgba(79,110,247,0.06);
+  position:relative;display:flex;flex-direction:column;min-height:870px;}
+.phone::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 60% 40% at 80% 10%,rgba(79,110,247,0.12) 0%,transparent 60%),
+  radial-gradient(ellipse 40% 30% at 10% 80%,rgba(14,207,168,0.07) 0%,transparent 60%);
+  pointer-events:none;z-index:0;}
+
+/* SCREENS */
+.screen{display:none;flex-direction:column;flex:1;position:relative;z-index:1}
+.screen.on{display:flex}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.screen.on{animation:rise .25s cubic-bezier(.22,1,.36,1)}
+
+/* SCROLL */
+.scroll{flex:1;overflow-y:auto;padding-bottom:12px}
+.scroll::-webkit-scrollbar{display:none}
+
+/* STATUS */
+.sb{padding:16px 26px 0;display:flex;justify-content:space-between;align-items:center;
+  font-size:11px;font-weight:600;color:var(--muted);font-family:var(--font-h);letter-spacing:.4px;}
+#clock{color:var(--text)}
+
+/* TOP BAR */
+.topbar{padding:14px 22px 0;display:flex;justify-content:space-between;align-items:center;}
+.user{display:flex;align-items:center;gap:11px}
+.ava{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#4F6EF7,#0ECFA8);
+  display:flex;align-items:center;justify-content:center;font-family:var(--font-h);font-weight:700;font-size:14px;color:#fff;flex-shrink:0;}
+.uname{font-size:15px;font-weight:700;color:var(--text);font-family:var(--font-h)}
+.uhey{font-size:11px;color:var(--muted);margin-bottom:2px;font-weight:400}
+.notif-btn{width:42px;height:42px;border-radius:50%;background:var(--glass2);border:1px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;font-size:17px;}
+.ndot{position:absolute;top:9px;right:9px;width:7px;height:7px;border-radius:50%;background:var(--accent);border:2px solid var(--bg);}
+
+/* BALANCE CARD */
+.balcard{margin:18px 16px 0;background:var(--glass);border:1px solid var(--border2);border-radius:26px;padding:22px 22px 18px;position:relative;overflow:hidden;cursor:pointer;}
+.balcard::after{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;
+  background:radial-gradient(circle,rgba(79,110,247,0.2) 0%,transparent 70%);pointer-events:none;}
+.brow1{display:flex;justify-content:space-between;align-items:flex-start}
+.blabel{font-size:11px;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;font-weight:600;font-family:var(--font-h)}
+.yield-pill{background:var(--goldg);border:1px solid rgba(240,180,41,0.25);color:var(--gold);padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;font-family:var(--font-h);letter-spacing:.3px;cursor:pointer;}
+.bamount{font-family:var(--font-h);font-size:42px;font-weight:700;color:var(--text);letter-spacing:-2px;line-height:1;margin:10px 0 4px;}
+.bsub{font-size:12px;color:var(--muted);font-weight:400}
+.brow3{display:flex;align-items:center;justify-content:space-between;margin-top:14px}
+.bchange{display:inline-flex;align-items:center;gap:5px;background:var(--greeng);color:var(--green);padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;font-family:var(--font-h);}
+.bearn{font-size:11px;color:var(--muted)}.bearn span{color:var(--gold);font-weight:700}
+
+/* QUICK ACTIONS */
+.qrow{padding:18px 16px 0;display:grid;grid-template-columns:repeat(5,1fr);gap:8px;}
+.qbtn{display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer;}
+.qicon{width:52px;height:52px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:20px;border:1px solid var(--border);transition:transform .15s ease,background .2s;}
+.qicon:active{transform:scale(0.91)}
+.qicon.primary{background:var(--accent);border-color:rgba(79,110,247,.5);}
+.qicon.g1{background:var(--greeng);border-color:rgba(14,207,168,.2);}
+.qicon.g2{background:var(--glass2);}
+.qicon.g3{background:var(--goldg);border-color:rgba(240,180,41,.2);}
+.qicon.g4{background:var(--redg);border-color:rgba(247,95,110,.2);}
+.qlabel{font-size:10px;color:var(--muted);font-weight:600;font-family:var(--font-h);letter-spacing:.2px;text-align:center}
+
+/* SECTION HDR */
+.shdr{padding:20px 20px 10px;display:flex;justify-content:space-between;align-items:center;}
+.stitle{font-size:15px;font-weight:700;color:var(--text);font-family:var(--font-h)}
+.slink{font-size:12px;color:var(--accent2);cursor:pointer;font-weight:500}
+
+/* SEND BANNER */
+.send-banner{margin:0 16px;background:linear-gradient(135deg,rgba(79,110,247,0.18),rgba(14,207,168,0.10));border:1px solid rgba(79,110,247,0.25);border-radius:var(--r);padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;}
+.sb-icon{font-size:26px}.sb-left{flex:1}
+.sb-title{font-size:13px;font-weight:700;color:var(--text);font-family:var(--font-h)}
+.sb-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.sb-arrow{font-size:20px;color:var(--accent2)}
+
+/* ASSETS */
+.assets{padding:0 14px;display:flex;flex-direction:column;gap:8px}
+.asset{background:var(--glass);border:1px solid var(--border);border-radius:var(--r);padding:13px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:background .18s;position:relative;overflow:hidden;}
+.asset::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px;opacity:0;transition:opacity .2s;}
+.asset:active{background:var(--glass2)}
+.asset.usdt::before{background:var(--green)}.asset.usdc::before{background:var(--accent)}.asset.dai::before{background:var(--gold)}
+.asset:hover::before{opacity:1}
+.coin{width:42px;height:42px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;font-family:var(--font-h);flex-shrink:0;}
+.coin.usdt{background:rgba(14,207,168,0.12);color:var(--green)}.coin.usdc{background:rgba(79,110,247,0.12);color:var(--accent2)}.coin.dai{background:rgba(240,180,41,0.12);color:var(--gold)}
+.cinfo{flex:1}.cname{font-size:13px;font-weight:700;color:var(--text);font-family:var(--font-h)}.cfull{font-size:11px;color:var(--dim);margin-top:2px}
+.ctag{font-size:9px;background:var(--goldg);color:var(--gold);padding:2px 6px;border-radius:6px;display:inline-block;margin-top:3px;font-weight:700;font-family:var(--font-h);}
+.cval{text-align:right}.camp{font-size:13px;font-weight:700;color:var(--text);font-family:var(--font-h)}.cinr{font-size:11px;color:var(--dim);margin-top:2px}
+.cchg{font-size:10px;margin-top:3px;font-weight:700}.cchg.up{color:var(--green)}.cchg.dn{color:var(--red)}
+
+/* RATE BAR */
+.rate-bar{margin:0 14px;background:var(--glass);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;}
+.rate-left{display:flex;align-items:center;gap:10px}
+.rate-icon{width:34px;height:34px;border-radius:10px;background:var(--accentg);display:flex;align-items:center;justify-content:center;font-size:15px;}
+.rate-title{font-size:12px;font-weight:700;color:var(--text);font-family:var(--font-h)}.rate-sub{font-size:10px;color:var(--muted);margin-top:1px}
+.rate-val{font-size:18px;font-weight:700;color:var(--accent2);font-family:var(--font-h);letter-spacing:-.5px;}
+
+/* ACTIVITY */
+.acts{padding:0 14px;display:flex;flex-direction:column;gap:2px}
+.act{display:flex;align-items:center;gap:11px;padding:12px 6px;border-bottom:1px solid var(--border);cursor:pointer;}
+.act:last-child{border-bottom:none}
+.aicon{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.aicon.in{background:var(--greeng)}.aicon.out{background:var(--accentg)}.aicon.bank{background:var(--goldg)}.aicon.inv{background:rgba(123,148,255,0.12)}
+.ainfo{flex:1}.atitle{font-size:12px;font-weight:600;color:var(--text)}.ameta{font-size:10px;color:var(--dim);margin-top:2px;text-transform:uppercase;letter-spacing:.3px}
+.aamt{text-align:right}.amain{font-size:12px;font-weight:700;font-family:var(--font-h)}.amain.pos{color:var(--green)}.amain.neg{color:var(--text)}.amain.pend{color:var(--gold)}
+.asub{font-size:10px;color:var(--dim);margin-top:2px}
+
+/* BOTTOM NAV */
+.bnav{display:flex;justify-content:space-around;padding:12px 0 30px;background:rgba(6,7,13,0.95);backdrop-filter:blur(20px);border-top:1px solid var(--border);}
+.bni{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:2px 18px;}
+.bni-icon{font-size:19px;transition:transform .15s}.bni-label{font-size:9px;color:var(--dim);font-family:var(--font-h);font-weight:700;letter-spacing:.3px;text-transform:uppercase}
+.bni.on .bni-label{color:var(--accent2)}.bni.on .bni-icon{filter:drop-shadow(0 0 6px rgba(79,110,247,0.6))}
+
+/* SCREEN HEADER */
+.shd{padding:52px 22px 14px;display:flex;align-items:center;gap:13px}
+.back{width:38px;height:38px;border-radius:50%;background:var(--glass2);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:background .15s;}
+.back:active{background:var(--glass)}.shdtitle{font-size:18px;font-weight:700;color:var(--text);font-family:var(--font-h)}
+
+/* COIN TABS */
+.ctabs{display:flex;gap:7px;padding:0 16px 16px}
+.ctab{flex:1;padding:9px 0;border-radius:10px;border:1px solid var(--border);background:var(--glass);text-align:center;font-size:12px;font-weight:700;cursor:pointer;color:var(--dim);font-family:var(--font-h);transition:all .2s;}
+.ctab.on{color:var(--text);border-color:var(--accent);background:var(--accentg)}
+
+/* INPUTS */
+.rbox{margin:0 16px 14px;background:var(--glass);border:1px solid var(--border2);border-radius:var(--r);padding:14px 16px;}
+.rlabel{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;font-family:var(--font-h);font-weight:700}
+.rinput{width:100%;background:transparent;border:none;outline:none;font-size:15px;color:var(--text);font-family:var(--font-b);}
+.rinput::placeholder{color:var(--dim)}.rhint{font-size:10px;color:var(--dim);margin-top:7px}
+
+/* AMOUNT BOX */
+.amtbox{margin:0 16px 14px;background:var(--glass);border:1px solid var(--border2);border-radius:var(--r);padding:22px;text-align:center;}
+.amtbig{font-size:52px;font-weight:700;font-family:var(--font-h);color:var(--text);letter-spacing:-3px;line-height:1;}
+.amtcoin{font-size:13px;color:var(--muted);margin-top:5px}.amtinr{font-size:14px;color:var(--accent2);margin-top:3px;font-weight:600;font-family:var(--font-h);}
+
+/* NUMPAD */
+.npad{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;padding:0 16px 14px;}
+.nk{background:var(--glass);border:1px solid var(--border);border-radius:12px;padding:16px 0;font-size:20px;font-weight:600;color:var(--text);text-align:center;cursor:pointer;font-family:var(--font-h);transition:all .1s;}
+.nk:active{background:var(--glass2);transform:scale(0.95)}
+
+/* CTA BUTTON */
+.cta{margin:0 16px 20px;width:calc(100% - 32px);background:var(--accent);border:none;border-radius:var(--r);padding:17px;font-size:15px;font-weight:700;color:#fff;cursor:pointer;font-family:var(--font-h);letter-spacing:.3px;transition:all .2s;}
+.cta:active{transform:scale(0.98)}.cta.green{background:var(--green);color:#000}
+.cta.gold{background:var(--gold);color:#000}
+
+/* RECEIVE QR */
+.qrcard{margin:0 16px 16px;background:var(--glass);border:1px solid var(--border2);border-radius:26px;padding:26px;text-align:center;}
+.qrbox{width:168px;height:168px;background:#fff;border-radius:16px;margin:0 auto 18px;display:flex;align-items:center;justify-content:center;}
+.qrname{font-size:17px;font-weight:700;color:var(--text);font-family:var(--font-h);margin-bottom:4px}
+.qrhandle{font-size:12px;color:var(--accent2)}
+.btns{padding:0 16px;display:flex;flex-direction:column;gap:9px}
+.outbtn{width:100%;background:var(--glass2);border:1px solid var(--border2);border-radius:var(--r);padding:14px;font-size:14px;font-weight:700;color:var(--text);cursor:pointer;font-family:var(--font-h);}
+.wabtn{width:100%;background:#25D366;border:none;border-radius:var(--r);padding:14px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;font-family:var(--font-h);}
+
+/* SUCCESS */
+.succbody{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 20px;}
+.succring{width:90px;height:90px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:40px;margin-bottom:20px;animation:pop .4s cubic-bezier(.34,1.56,.64,1);}
+.succring.green{background:var(--greeng);border:2px solid var(--green)}
+.succring.blue{background:var(--accentg);border:2px solid var(--accent)}
+.succring.gold{background:var(--goldg);border:2px solid var(--gold)}
+@keyframes pop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+.succtitle{font-size:24px;font-weight:700;color:var(--text);font-family:var(--font-h);margin-bottom:6px}
+.succsub{font-size:13px;color:var(--muted);text-align:center;line-height:1.5}
+.receipt{width:100%;background:var(--glass);border:1px solid var(--border2);border-radius:var(--r);padding:18px;margin:20px 0;}
+.rrow{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);}
+.rrow:last-child{border-bottom:none}.rkey{font-size:12px;color:var(--muted)}.rval{font-size:12px;font-weight:700;color:var(--text);font-family:var(--font-h)}
+.rval.g{color:var(--green)}.rval.h{font-size:10px;color:var(--accent2);font-family:monospace}
+
+/* CARD STYLE */
+.infocard{margin:0 16px 12px;background:var(--glass);border:1px solid var(--border);border-radius:var(--r);padding:16px;}
+.infocard-title{font-size:12px;font-weight:700;color:var(--muted);font-family:var(--font-h);margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px}
+
+/* WITHDRAW FORM */
+.wform{padding:0 16px}
+.wlabel{font-size:11px;color:var(--muted);font-family:var(--font-h);font-weight:700;letter-spacing:.5px;margin-bottom:6px;text-transform:uppercase}
+.winput{width:100%;background:var(--glass);border:1px solid var(--border2);border-radius:10px;padding:13px 15px;font-size:14px;color:var(--text);font-family:var(--font-b);outline:none;margin-bottom:14px;}
+.winput:focus{border-color:var(--accent)}
+.winput::placeholder{color:var(--dim)}
+select.winput{appearance:none;-webkit-appearance:none}
+
+/* INVOICE */
+.invbanner{margin:0 16px 14px;background:var(--accentg);border:1px solid rgba(79,110,247,.2);border-radius:var(--r);padding:12px 14px;}
+.invb-t{font-size:12px;font-weight:700;color:var(--accent2);font-family:var(--font-h)}.invb-s{font-size:11px;color:var(--muted);margin-top:3px}
+
+/* HISTORY */
+.hist-filter{display:flex;gap:8px;padding:0 16px 14px;overflow-x:auto}
+.hist-filter::-webkit-scrollbar{display:none}
+.hf-chip{padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:var(--glass);font-size:11px;font-weight:700;color:var(--dim);font-family:var(--font-h);cursor:pointer;white-space:nowrap;transition:all .2s;}
+.hf-chip.on{background:var(--accentg);border-color:var(--accent);color:var(--text)}
+
+/* YIELD SCREEN */
+.yield-card{margin:0 16px 12px;background:var(--glass);border:1px solid rgba(240,180,41,.2);border-radius:24px;padding:22px;text-align:center;}
+.ybig{font-size:46px;font-weight:700;color:var(--gold);font-family:var(--font-h);letter-spacing:-2px}
+.ysub{font-size:12px;color:var(--muted);margin-top:4px}
+.yield-items{padding:0 16px;display:flex;flex-direction:column;gap:10px}
+.yitem{background:var(--glass);border:1px solid var(--border);border-radius:var(--r);padding:14px;display:flex;align-items:center;gap:12px;}
+.yitem-icon{font-size:22px;flex-shrink:0}.yitem-info{flex:1}
+.yitem-name{font-size:13px;font-weight:700;color:var(--text);font-family:var(--font-h)}.yitem-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.yitem-val{font-size:15px;font-weight:700;color:var(--gold);font-family:var(--font-h)}
+
+/* SETTINGS */
+.sett-section{padding:0 16px 8px}
+.sett-item{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--border);cursor:pointer;}
+.sett-item:last-child{border-bottom:none}
+.sett-icon{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.sett-info{flex:1}.sett-name{font-size:13px;font-weight:600;color:var(--text)}.sett-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.sett-arrow{font-size:14px;color:var(--dim)}
+.sett-badge{background:var(--greeng);color:var(--green);font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;font-family:var(--font-h);}
+.sett-badge.red{background:var(--redg);color:var(--red)}
+.toggle{width:44px;height:24px;border-radius:12px;background:var(--glass2);border:1px solid var(--border2);position:relative;cursor:pointer;transition:background .2s;}
+.toggle.on{background:var(--accent);border-color:var(--accent)}
+.toggle::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s;}
+.toggle.on::after{transform:translateX(20px)}
+
+/* PROFILE SECTION */
+.profile-hero{padding:20px 16px;display:flex;align-items:center;gap:14px}
+.profile-ava{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#4F6EF7,#0ECFA8);display:flex;align-items:center;justify-content:center;font-family:var(--font-h);font-weight:700;font-size:22px;color:#fff;flex-shrink:0;}
+.profile-name{font-size:18px;font-weight:700;color:var(--text);font-family:var(--font-h)}.profile-handle{font-size:12px;color:var(--accent2);margin-top:3px}
+.profile-badge{display:inline-flex;align-items:center;gap:4px;background:var(--greeng);border:1px solid rgba(14,207,168,.2);color:var(--green);padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;font-family:var(--font-h);margin-top:6px;}
+
+/* NOTIF DROPDOWN */
+.notif-panel{position:absolute;top:70px;right:16px;width:300px;background:#111728;border:1px solid var(--border2);border-radius:16px;z-index:100;box-shadow:0 16px 48px rgba(0,0,0,0.6);display:none;}
+.notif-panel.show{display:block;animation:rise .2s ease}
+.notif-hdr{padding:14px 16px 10px;font-size:13px;font-weight:700;color:var(--text);font-family:var(--font-h);border-bottom:1px solid var(--border);}
+.notif-item{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;gap:10px;cursor:pointer;}
+.notif-item:last-child{border-bottom:none}
+.notif-dot2{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;margin-top:5px}
+.notif-dot2.green{background:var(--green)}.notif-dot2.gold{background:var(--gold)}
+.notif-item-title{font-size:12px;font-weight:600;color:var(--text)}.notif-item-sub{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* RATE ALERT MODAL */
+.overlay{position:absolute;inset:0;background:rgba(0,0,0,0.7);z-index:200;display:none;align-items:flex-end;}
+.overlay.show{display:flex;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal{width:100%;background:#111728;border-radius:24px 24px 0 0;padding:24px 20px 40px;}
+.modal-title{font-size:16px;font-weight:700;color:var(--text);font-family:var(--font-h);margin-bottom:4px}
+.modal-sub{font-size:12px;color:var(--muted);margin-bottom:20px}
+.modal-close{position:absolute;top:16px;right:20px;font-size:20px;color:var(--dim);cursor:pointer;background:none;border:none;}
+
+/* TOAST */
+.toast{position:absolute;bottom:100px;left:50%;transform:translateX(-50%);background:#1a2040;border:1px solid var(--border2);border-radius:12px;padding:10px 18px;font-size:12px;font-weight:600;color:var(--text);font-family:var(--font-h);white-space:nowrap;z-index:300;display:none;animation:toast-in .3s ease;}
+@keyframes toast-in{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+.toast.show{display:block}
+</style>
+</head>
+<body>
+<div class="phone" id="app">
+
+<!-- TOAST -->
+<div class="toast" id="toast">✓ Done</div>
+
+<!-- NOTIFICATION PANEL -->
+<div class="notif-panel" id="notif-panel">
+  <div class="notif-hdr">Notifications <span style="font-size:10px;color:var(--muted);font-weight:400;margin-left:6px">3 new</span></div>
+  <div class="notif-item" onclick="closeNotif()">
+    <div class="notif-dot2 green"></div>
+    <div><div class="notif-item-title">Received 50 USDT</div><div class="notif-item-sub">+₹4,200 · Today 2:45 PM</div></div>
+  </div>
+  <div class="notif-item" onclick="closeNotif()">
+    <div class="notif-dot2 gold"></div>
+    <div><div class="notif-item-title">Rate Alert Triggered</div><div class="notif-item-sub">USD = ₹85.20 · 3-month high!</div></div>
+  </div>
+  <div class="notif-item" onclick="closeNotif()">
+    <div class="notif-dot2"></div>
+    <div><div class="notif-item-title">Invoice Paid</div><div class="notif-item-sub">Client paid INV-2024-001 · 500 USDC</div></div>
+  </div>
+</div>
+
+<!-- RATE ALERT OVERLAY -->
+<div class="overlay" id="rate-overlay">
+  <div class="modal" style="position:relative">
+    <button class="modal-close" onclick="closeModal('rate-overlay')">✕</button>
+    <div class="modal-title">Set Rate Alert</div>
+    <div class="modal-sub">Get notified when USD hits your target rate</div>
+    <div style="margin-bottom:12px">
+      <div class="rlabel" style="margin-bottom:6px">Alert me when 1 USD =</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <input class="winput" id="alert-rate" type="number" placeholder="85.00" value="85" style="margin-bottom:0;flex:1">
+        <div style="font-size:14px;font-weight:700;color:var(--text);font-family:var(--font-h)">INR</div>
+      </div>
+    </div>
+    <div style="margin-bottom:16px">
+      <div class="rlabel" style="margin-bottom:6px">Alert type</div>
+      <div style="display:flex;gap:8px">
+        <div class="ctab on" style="flex:1" onclick="selAlert(this)">When above ▲</div>
+        <div class="ctab" style="flex:1" onclick="selAlert(this)">When below ▼</div>
+      </div>
+    </div>
+    <button class="cta" style="margin:0;width:100%" onclick="setAlert()">Set Alert 🔔</button>
+  </div>
+</div>
+
+<!-- SEND CONFIRM OVERLAY -->
+<div class="overlay" id="send-confirm-overlay">
+  <div class="modal" style="position:relative">
+    <button class="modal-close" onclick="closeModal('send-confirm-overlay')">✕</button>
+    <div class="modal-title">Confirm Send</div>
+    <div class="modal-sub">Review before sending</div>
+    <div style="background:var(--glass);border:1px solid var(--border2);border-radius:14px;padding:14px;margin-bottom:16px">
+      <div class="rrow"><span class="rkey">To</span><span class="rval" id="conf-to">—</span></div>
+      <div class="rrow"><span class="rkey">Amount</span><span class="rval g" id="conf-amt">—</span></div>
+      <div class="rrow"><span class="rkey">Network fee</span><span class="rval">₹0.07 (Stellar)</span></div>
+      <div class="rrow" style="border:none"><span class="rkey">Estimated time</span><span class="rval g">~4 seconds ⚡</span></div>
+    </div>
+    <button class="cta" style="margin:0;width:100%;margin-bottom:8px" onclick="confirmSend()">Confirm & Send →</button>
+    <button class="outbtn" onclick="closeModal('send-confirm-overlay')">Cancel</button>
+  </div>
+</div>
+
+<!-- ══════════ HOME ══════════ -->
+<div id="pg-home" class="screen on">
+ <div class="scroll">
+  <div class="sb"><span id="clock">9:41</span><span>▐▐▐ ◉ 98%</span></div>
+  <div class="topbar">
+    <div class="user">
+      <div class="ava" onclick="go('settings')">AR</div>
+      <div><div class="uhey">Good morning 👋</div><div class="uname">Alex Rivera</div></div>
+    </div>
+    <div class="notif-btn" onclick="toggleNotif()"><div class="ndot"></div>🔔</div>
+  </div>
+
+  <div class="balcard" onclick="go('yield')">
+    <div class="brow1">
+      <div class="blabel">Total Balance</div>
+      <div class="yield-pill">✦ 4.8% APY</div>
+    </div>
+    <div class="bamount" id="home-balance">₹1,24,500</div>
+    <div class="bsub"><span id="live-dot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-right:5px;animation:pulse 2s ease infinite"></span>1,482 USDC · Tap to see earnings</div>
+    <div class="brow3">
+      <div class="bchange">▲ +2.4% this week</div>
+      <div class="bearn">Earned <span>+₹482</span> this week</div>
+    </div>
+  </div>
+
+  <div class="qrow">
+    <div class="qbtn" onclick="go('send')"><div class="qicon primary">↗</div><div class="qlabel">Send</div></div>
+    <div class="qbtn" onclick="go('receive')"><div class="qicon g1">↙</div><div class="qlabel">Receive</div></div>
+    <div class="qbtn" onclick="go('withdraw')"><div class="qicon g2">🏦</div><div class="qlabel">Withdraw</div></div>
+    <div class="qbtn" onclick="go('invoice')"><div class="qicon g3">🧾</div><div class="qlabel">Invoice</div></div>
+    <div class="qbtn" onclick="go('yield')"><div class="qicon g4">💰</div><div class="qlabel">Yield</div></div>
+  </div>
+
+  <div class="shdr" style="padding-bottom:8px"><div class="stitle">Live Rates</div><div class="slink" onclick="openModal('rate-overlay')">Set Alert</div></div>
+  <div class="rate-bar" onclick="openModal('rate-overlay')">
+    <div class="rate-left">
+      <div class="rate-icon">📈</div>
+      <div><div class="rate-title">USD → INR</div><div class="rate-sub"><span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--green);margin-right:4px;animation:pulse 2s ease infinite"></span>Live · updating</div></div>
+    </div>
+    <div class="rate-val" id="live-rate">₹84.92</div>
+  </div>
+
+  <div class="shdr" style="padding-bottom:8px;margin-top:4px"><div class="stitle">Send Globally</div></div>
+  <div class="send-banner" onclick="go('send')">
+    <div class="sb-icon">🌍</div>
+    <div class="sb-left"><div class="sb-title">Send to 180+ countries</div><div class="sb-sub">Phone number se · 5 seconds · &lt;₹1 fee</div></div>
+    <div class="sb-arrow">›</div>
+  </div>
+
+  <div class="shdr"><div class="stitle">My Wallet</div><div class="slink" onclick="go('history')">See all</div></div>
+  <div class="assets">
+    <div class="asset usdt" onclick="showAsset('USDT','850','71400','0.01')">
+      <div class="coin usdt">₮</div>
+      <div class="cinfo"><div class="cname">USDT</div><div class="cfull">Tether · Stellar</div></div>
+      <div class="cval"><div class="camp">850.00</div><div class="cinr">₹71,400</div><div class="cchg up">▲ 0.01%</div></div>
+    </div>
+    <div class="asset usdc" onclick="showAsset('USDC','420','35280','0.02')">
+      <div class="coin usdc">$</div>
+      <div class="cinfo"><div class="cname">USDC</div><div class="cfull">USD Coin · Circle</div><div class="ctag">Earning 4.8%</div></div>
+      <div class="cval"><div class="camp">420.00</div><div class="cinr">₹35,280</div><div class="cchg up">▲ 0.02%</div></div>
+    </div>
+    <div class="asset dai" onclick="showAsset('DAI','212','17820','0.00')">
+      <div class="coin dai">◈</div>
+      <div class="cinfo"><div class="cname">DAI</div><div class="cfull">Dai Stablecoin</div></div>
+      <div class="cval"><div class="camp">212.00</div><div class="cinr">₹17,820</div><div class="cchg dn">▼ 0.00%</div></div>
+    </div>
+  </div>
+
+  <div class="shdr"><div class="stitle">Activity</div><div class="slink" onclick="go('history')">History</div></div>
+  <div class="acts">
+    <div class="act" onclick="go('history')"><div class="aicon in">📥</div><div class="ainfo"><div class="atitle">Received from Rahul</div><div class="ameta">Today · 2:45 PM · USDT</div></div><div class="aamt"><div class="amain pos">+₹4,200</div><div class="asub">50 USDT</div></div></div>
+    <div class="act" onclick="go('history')"><div class="aicon out">📤</div><div class="ainfo"><div class="atitle">Sent to Sarah (US)</div><div class="ameta">Yesterday · USDC</div></div><div class="aamt"><div class="amain neg">−₹1,680</div><div class="asub">20 USDC</div></div></div>
+    <div class="act" onclick="go('history')"><div class="aicon inv">🧾</div><div class="ainfo"><div class="atitle">Invoice paid — Upwork</div><div class="ameta">11 Oct · USDC</div></div><div class="aamt"><div class="amain pos">+₹42,000</div><div class="asub">500 USDC</div></div></div>
+    <div class="act" onclick="go('history')"><div class="aicon bank">🏦</div><div class="ainfo"><div class="atitle">Withdrawal to HDFC</div><div class="ameta">12 Oct · Bank</div></div><div class="aamt"><div class="amain pend">₹10,000</div><div class="asub">Pending</div></div></div>
+  </div>
+  <div style="height:16px"></div>
+ </div>
+ <div class="bnav">
+  <div class="bni on" onclick="navGo('home',this)"><div class="bni-icon">🏠</div><div class="bni-label">Home</div></div>
+  <div class="bni" onclick="navGo('history',this)"><div class="bni-icon">🕐</div><div class="bni-label">History</div></div>
+  <div class="bni" onclick="navGo('invoice',this)"><div class="bni-icon">🧾</div><div class="bni-label">Invoice</div></div>
+  <div class="bni" onclick="navGo('yield',this)"><div class="bni-icon">💰</div><div class="bni-label">Yield</div></div>
+  <div class="bni" onclick="navGo('settings',this)"><div class="bni-icon">⚙️</div><div class="bni-label">Settings</div></div>
+ </div>
+</div>
+
+<!-- ══════════ SEND ══════════ -->
+<div id="pg-send" class="screen">
+ <div class="shd"><div class="back" onclick="go('home')">←</div><div class="shdtitle">Send Money</div></div>
+ <div class="scroll">
+  <div class="ctabs">
+   <div class="ctab on" onclick="selCoin(this,'USDT')">USDT</div>
+   <div class="ctab" onclick="selCoin(this,'USDC')">USDC</div>
+   <div class="ctab" onclick="selCoin(this,'DAI')">DAI</div>
+  </div>
+  <div class="rbox"><div class="rlabel">Send to</div><input class="rinput" id="send-rec" placeholder="Phone number or @username"/><div class="rhint">📞 Any phone number — no crypto needed</div></div>
+  <div class="amtbox"><div class="amtbig" id="send-disp">0</div><div class="amtcoin" id="send-coinlbl">USDT</div><div class="amtinr" id="send-inr">≈ ₹0.00</div></div>
+  <div class="npad" id="send-pad"></div>
+  <div style="padding:0 16px 8px"><button class="cta" onclick="openSendConfirm()">Review & Send →</button></div>
+ </div>
+</div>
+
+<!-- ══════════ SEND SUCCESS ══════════ -->
+<div id="pg-send-success" class="screen">
+ <div class="succbody">
+  <div class="succring green">✓</div>
+  <div class="succtitle">Money Sent! ⚡</div>
+  <div class="succsub">Confirmed on Stellar in 4 seconds</div>
+  <div class="receipt">
+   <div class="rrow"><span class="rkey">Amount</span><span class="rval g" id="ss-amt">—</span></div>
+   <div class="rrow"><span class="rkey">To</span><span class="rval" id="ss-to">—</span></div>
+   <div class="rrow"><span class="rkey">Fee</span><span class="rval">₹0.07</span></div>
+   <div class="rrow"><span class="rkey">Speed</span><span class="rval g">4 sec ⚡</span></div>
+   <div class="rrow"><span class="rkey">Status</span><span class="rval g">Confirmed ✓</span></div>
+   <div class="rrow" style="flex-direction:column;gap:4px"><span class="rkey">Txn Hash</span><span class="rval h" id="ss-hash">—</span></div>
+  </div>
+  <button class="cta green" style="margin:0;width:100%;margin-bottom:10px" onclick="go('home')">Back to Home</button>
+  <button class="outbtn" onclick="go('send')">Send Again</button>
+ </div>
+</div>
+
+<!-- ══════════ RECEIVE ══════════ -->
+<div id="pg-receive" class="screen">
+ <div class="shd"><div class="back" onclick="go('home')">←</div><div class="shdtitle">Receive Money</div></div>
+ <div class="scroll">
+  <div class="qrcard">
+   <div class="qrbox">
+    <svg width="148" height="148" viewBox="0 0 148 148"><rect width="148" height="148" fill="white"/><g fill="#06070D"><rect x="10" y="10" width="52" height="52" rx="5"/><rect x="17" y="17" width="38" height="38" rx="2" fill="white"/><rect x="24" y="24" width="24" height="24" rx="1"/><rect x="86" y="10" width="52" height="52" rx="5"/><rect x="93" y="17" width="38" height="38" rx="2" fill="white"/><rect x="100" y="24" width="24" height="24" rx="1"/><rect x="10" y="86" width="52" height="52" rx="5"/><rect x="17" y="93" width="38" height="38" rx="2" fill="white"/><rect x="24" y="100" width="24" height="24" rx="1"/><rect x="86" y="86" width="12" height="12"/><rect x="102" y="86" width="12" height="12"/><rect x="118" y="86" width="20" height="12"/><rect x="86" y="102" width="20" height="12"/><rect x="110" y="102" width="12" height="12"/><rect x="126" y="102" width="12" height="12"/><rect x="86" y="118" width="12" height="20"/><rect x="102" y="118" width="16" height="12"/><rect x="122" y="114" width="16" height="12"/></g></svg>
+   </div>
+   <div class="qrname">Alex Rivera</div>
+   <div class="qrhandle">@alexrivera · stablepay.app/pay/alex</div>
+  </div>
+  <div class="ctabs" style="padding:0 16px 16px">
+   <div class="ctab on" onclick="selCoin(this,'USDT')">USDT</div>
+   <div class="ctab" onclick="selCoin(this,'USDC')">USDC</div>
+   <div class="ctab" onclick="selCoin(this,'DAI')">DAI</div>
+  </div>
+  <div class="infocard">
+   <div class="infocard-title">Your Wallet Address</div>
+   <div style="font-size:11px;color:var(--accent2);font-family:monospace;word-break:break-all;line-height:1.5">GDQP2KPQGKIHYJGXNUIY4WKZB...WKDZ</div>
+  </div>
+  <div class="btns">
+   <button class="outbtn" onclick="copyLink()">🔗 Copy Payment Link</button>
+   <button class="outbtn" onclick="copyAddr()">📋 Copy Wallet Address</button>
+   <button class="wabtn" onclick="shareWA()">📱 Share on WhatsApp</button>
+  </div>
+  <div style="height:16px"></div>
+ </div>
+</div>
+
+<!-- ══════════ WITHDRAW ══════════ -->
+<div id="pg-withdraw" class="screen">
+ <div class="shd"><div class="back" onclick="go('home')">←</div><div class="shdtitle">Withdraw to Bank</div></div>
+ <div class="scroll">
+  <div class="infocard" style="background:var(--goldg);border-color:rgba(240,180,41,.2)">
+   <div style="font-size:12px;color:var(--gold);font-weight:700;font-family:var(--font-h)">Available Balance</div>
+   <div style="font-size:28px;font-weight:700;color:var(--text);font-family:var(--font-h);margin-top:4px">₹1,24,500</div>
+   <div style="font-size:11px;color:var(--muted);margin-top:2px">1,482 USDC · Rate: ₹84.92</div>
+  </div>
+  <div class="wform">
+   <div class="wlabel">Select Coin</div>
+   <select class="winput" id="w-coin">
+    <option>USDC — 420.00 available</option>
+    <option>USDT — 850.00 available</option>
+    <option>DAI — 212.00 available</option>
+   </select>
+   <div class="wlabel">Amount (USDC)</div>
+   <input class="winput" id="w-amt" type="number" placeholder="e.g. 100" oninput="calcWithdraw()"/>
+   <div style="background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
+    <span style="font-size:11px;color:var(--muted)">You will receive</span>
+    <span style="font-size:16px;font-weight:700;color:var(--green);font-family:var(--font-h)" id="w-inr-calc">₹0</span>
+   </div>
+   <div class="wlabel">Bank Account</div>
+   <select class="winput" id="w-bank">
+    <option>HDFC Bank — XXXX 4521</option>
+    <option>SBI — XXXX 8833</option>
+    <option>+ Add new bank account</option>
+   </select>
+   <div style="background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:16px">
+    <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:11px;color:var(--muted)">Processing time</span><span style="font-size:11px;color:var(--text)">1–2 hours</span></div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:11px;color:var(--muted)">Withdrawal fee</span><span style="font-size:11px;color:var(--green)">₹15 flat</span></div>
+    <div style="display:flex;justify-content:space-between"><span style="font-size:11px;color:var(--muted)">Min withdrawal</span><span style="font-size:11px;color:var(--text)">₹500</span></div>
+   </div>
+   <button class="cta gold" onclick="doWithdraw()">Withdraw to Bank →</button>
+  </div>
+ </div>
+</div>
+
+<!-- ══════════ WITHDRAW SUCCESS ══════════ -->
+<div id="pg-withdraw-success" class="screen">
+ <div class="succbody">
+  <div class="succring gold">🏦</div>
+  <div class="succtitle">Withdrawal Initiated!</div>
+  <div class="succsub">Your INR will reach your bank in 1–2 hours</div>
+  <div class="receipt">
+   <div class="rrow"><span class="rkey">Amount</span><span class="rval" id="ws-amt">—</span></div>
+   <div class="rrow"><span class="rkey">Bank</span><span class="rval" id="ws-bank">HDFC — XXXX 4521</span></div>
+   <div class="rrow"><span class="rkey">Fee</span><span class="rval">₹15</span></div>
+   <div class="rrow"><span class="rkey">ETA</span><span class="rval">1–2 hours</span></div>
+   <div class="rrow" style="border:none"><span class="rkey">Status</span><span class="rval" style="color:var(--gold)">Processing ⏳</span></div>
+  </div>
+  <button class="cta gold" style="margin:0;width:100%;margin-bottom:10px" onclick="go('home')">Back to Home</button>
+  <button class="outbtn" onclick="go('history')">View in History</button>
+ </div>
+</div>
+
+<!-- ══════════ INVOICE ══════════ -->
+<div id="pg-invoice" class="screen">
+ <div class="shd"><div class="back" onclick="go('home')">←</div><div class="shdtitle">Create Invoice</div></div>
+ <div class="scroll">
+  <div class="invbanner"><div class="invb-t">Freelancer Invoice Tool</div><div class="invb-s">Create → Share link → Get USDC → Bank mein INR auto</div></div>
+  <div class="wform" style="padding:0 16px">
+   <div class="wlabel">Client Name</div>
+   <input class="winput" id="inv-client" placeholder="e.g. John Smith / Acme Corp"/>
+   <div class="wlabel">Work Description</div>
+   <input class="winput" id="inv-desc" placeholder="e.g. Logo design, 3 revisions"/>
+   <div class="wlabel">Amount (USDC)</div>
+   <input class="winput" id="inv-amt" type="number" placeholder="e.g. 500" oninput="calcInvINR()"/>
+   <div style="background:var(--glass);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:14px;display:flex;justify-content:space-between">
+    <span style="font-size:11px;color:var(--muted)">Client pays</span>
+    <span style="font-size:13px;font-weight:700;color:var(--green);font-family:var(--font-h)" id="inv-usd-show">$0 USDC</span>
+   </div>
+   <div class="wlabel">Due Date</div>
+   <input class="winput" id="inv-due" type="date"/>
+   <div class="wlabel">Currency preference</div>
+   <select class="winput" id="inv-curr">
+    <option>USDC (recommended)</option>
+    <option>USDT</option>
+    <option>DAI</option>
+   </select>
+   <button class="cta" onclick="genInvoice()">Generate Invoice Link →</button>
+  </div>
+  <div id="inv-result" style="display:none;margin:0 16px;padding:16px;background:var(--greeng);border:1px solid rgba(14,207,168,.25);border-radius:var(--r)">
+   <div style="font-size:12px;font-weight:700;color:var(--green);font-family:var(--font-h);margin-bottom:5px">Invoice Created ✓</div>
+   <div style="font-size:11px;color:var(--muted);margin-bottom:12px" id="inv-link-txt">stablepay.app/inv/INV-00001</div>
+   <div style="display:flex;gap:8px">
+    <button class="outbtn" style="flex:1;padding:10px" onclick="copyInvLink()">📋 Copy</button>
+    <button class="wabtn" style="flex:1;padding:10px" onclick="shareInvWA()">📱 WhatsApp</button>
+   </div>
+  </div>
+  <div style="height:16px"></div>
+ </div>
+</div>
+
+<!-- ══════════ HISTORY ══════════ -->
+<div id="pg-history" class="screen">
+ <div class="shd"><div class="back" onclick="go('home')">←</div><div class="shdtitle">Transaction History</div></div>
+ <div class="scroll">
+  <div class="hist-filter">
+   <div class="hf-chip on" onclick="filterHist(this,'all')">All</div>
+   <div class="hf-chip" onclick="filterHist(this,'sent')">Sent</div>
+   <div class="hf-chip" onclick="filterHist(this,'received')">Received</div>
+   <div class="hf-chip" onclick="filterHist(this,'withdraw')">Withdraw</div>
+   <div class="hf-chip" onclick="filterHist(this,'invoice')">Invoice</div>
+  </div>
+  <div id="hist-list" class="acts" style="padding:0 14px"></div>
+  <div style="height:16px"></div>
+ </div>
+ <div class="bnav">
+  <div class="bni" onclick="navGo('home',this)"><div class="bni-icon">🏠</div><div class="bni-label">Home</div></div>
+  <div class="bni on" onclick="navGo('history',this)"><div class="bni-icon">🕐</div><div class="bni-label">History</div></div>
+  <div class="bni" onclick="navGo('invoice',this)"><div class="bni-icon">🧾</div><div class="bni-label">Invoice</div></div>
+  <div class="bni" onclick="navGo('yield',this)"><div class="bni-icon">💰</div><div class="bni-label">Yield</div></div>
+  <div class="bni" onclick="navGo('settings',this)"><div class="bni-icon">⚙️</div><div class="bni-label">Settings</div></div>
+ </div>
+</div>
+
+<!-- ══════════ YIELD ══════════ -->
+<div id="pg-yield" class="screen">
+ <div class="shd"><div class="back" onclick="go('home')">←</div><div class="shdtitle">Yield Earnings</div></div>
+ <div class="scroll">
+  <div class="yield-card">
+   <div class="ybig" id="yield-total">+₹482</div>
+   <div class="ysub">Earned this week · Auto, no action needed</div>
+   <div style="display:flex;gap:12px;margin-top:14px;justify-content:center">
+    <div style="text-align:center"><div style="font-size:18px;font-weight:700;color:var(--text);font-family:var(--font-h)">₹1,840</div><div style="font-size:10px;color:var(--muted);margin-top:2px">This month</div></div>
+    <div style="width:1px;background:var(--border)"></div>
+    <div style="text-align:center"><div style="font-size:18px;font-weight:700;color:var(--text);font-family:var(--font-h)">₹8,200</div><div style="font-size:10px;color:var(--muted);margin-top:2px">Total earned</div></div>
+    <div style="width:1px;background:var(--border)"></div>
+    <div style="text-align:center"><div style="font-size:18px;font-weight:700;color:var(--gold);font-family:var(--font-h)">4.8%</div><div style="font-size:10px;color:var(--muted);margin-top:2px">Current APY</div></div>
+   </div>
+  </div>
+  <div class="yield-items">
+   <div class="yitem"><div class="yitem-icon">$</div><div class="yitem-info"><div class="yitem-name">USDC — 420.00</div><div class="yitem-sub">Aave Protocol · 4.8% APY · No lock-in</div></div><div class="yitem-val">+₹338</div></div>
+   <div class="yitem"><div class="yitem-icon">◈</div><div class="yitem-info"><div class="yitem-name">DAI — 212.00</div><div class="yitem-sub">Compound Protocol · 3.9% APY</div></div><div class="yitem-val">+₹144</div></div>
+  </div>
+  <div style="margin:12px 16px 0;padding:14px;background:var(--goldg);border:1px solid rgba(240,180,41,.2);border-radius:var(--r)">
+   <div style="font-size:12px;font-weight:700;color:var(--gold);font-family:var(--font-h);margin-bottom:4px">vs. Traditional Options</div>
+   <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:11px;color:var(--muted)">SBI FD (1yr lock)</span><span style="font-size:11px;color:var(--text)">7.0%</span></div>
+   <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:11px;color:var(--muted)">StablePay Yield</span><span style="font-size:11px;color:var(--gold);font-weight:700">4.8% (no lock-in)</span></div>
+   <div style="display:flex;justify-content:space-between"><span style="font-size:11px;color:var(--muted)">Savings Account</span><span style="font-size:11px;color:var(--text)">2.5–3.5%</span></div>
+  </div>
+  <div style="padding:16px 16px 0">
+   <button class="cta gold" style="margin:0;width:100%" onclick="showToast('Yield is automatic — kuch karne ki zaroorat nahi! ✓')">Auto-Compounding ON ✓</button>
+  </div>
+  <div style="height:16px"></div>
+ </div>
+ <div class="bnav">
+  <div class="bni" onclick="navGo('home',this)"><div class="bni-icon">🏠</div><div class="bni-label">Home</div></div>
+  <div class="bni" onclick="navGo('history',this)"><div class="bni-icon">🕐</div><div class="bni-label">History</div></div>
+  <div class="bni" onclick="navGo('invoice',this)"><div class="bni-icon">🧾</div><div class="bni-label">Invoice</div></div>
+  <div class="bni on" onclick="navGo('yield',this)"><div class="bni-icon">💰</div><div class="bni-label">Yield</div></div>
+  <div class="bni" onclick="navGo('settings',this)"><div class="bni-icon">⚙️</div><div class="bni-label">Settings</div></div>
+ </div>
+</div>
+
+<!-- ══════════ SETTINGS ══════════ -->
+<div id="pg-settings" class="screen">
+ <div class="scroll">
+  <div class="sb"><span id="clock2">9:41</span><span>▐▐▐ ◉</span></div>
+  <div class="profile-hero">
+   <div class="profile-ava">AR</div>
+   <div>
+    <div class="profile-name">Alex Rivera</div>
+    <div class="profile-handle">@alexrivera · stablepay.app</div>
+    <div class="profile-badge">✓ KYC Verified</div>
+   </div>
+  </div>
+
+  <div class="sett-section">
+   <div class="stitle" style="padding:0 0 12px">Account</div>
+   <div class="sett-item" onclick="showToast('Profile edit screen — coming soon')">
+    <div class="sett-icon" style="background:var(--accentg)">👤</div>
+    <div class="sett-info"><div class="sett-name">Edit Profile</div><div class="sett-sub">Name, photo, @handle</div></div>
+    <div class="sett-arrow">›</div>
+   </div>
+   <div class="sett-item" onclick="showToast('KYC Verified ✓ Aadhaar + PAN linked')">
+    <div class="sett-icon" style="background:var(--greeng)">🪪</div>
+    <div class="sett-info"><div class="sett-name">KYC Verification</div><div class="sett-sub">Aadhaar + PAN linked</div></div>
+    <div class="sett-badge">Verified</div>
+   </div>
+   <div class="sett-item" onclick="showToast('Bank accounts: HDFC XXXX4521, SBI XXXX8833')">
+    <div class="sett-icon" style="background:var(--goldg)">🏦</div>
+    <div class="sett-info"><div class="sett-name">Bank Accounts</div><div class="sett-sub">2 accounts linked</div></div>
+    <div class="sett-arrow">›</div>
+   </div>
+  </div>
+
+  <div class="sett-section" style="padding-top:8px">
+   <div class="stitle" style="padding:0 0 12px">Security</div>
+   <div class="sett-item">
+    <div class="sett-icon" style="background:var(--accentg)">🔐</div>
+    <div class="sett-info"><div class="sett-name">Biometric Lock</div><div class="sett-sub">Fingerprint / Face ID</div></div>
+    <div class="toggle on" id="bio-toggle" onclick="toggleSwitch(this)"></div>
+   </div>
+   <div class="sett-item" onclick="showToast('PIN changed successfully ✓')">
+    <div class="sett-icon" style="background:var(--accentg)">🔑</div>
+    <div class="sett-info"><div class="sett-name">Change PIN</div><div class="sett-sub">4-digit transaction PIN</div></div>
+    <div class="sett-arrow">›</div>
+   </div>
+   <div class="sett-item">
+    <div class="sett-icon" style="background:var(--greeng)">🛡️</div>
+    <div class="sett-info"><div class="sett-name">Transaction Limit</div><div class="sett-sub">₹1,00,000 / day</div></div>
+    <div class="sett-arrow">›</div>
+   </div>
+   <div class="sett-item" onclick="showToast('Private key backed up to device Secure Enclave ✓')">
+    <div class="sett-icon" style="background:var(--accentg)">🔒</div>
+    <div class="sett-info"><div class="sett-name">Private Key Backup</div><div class="sett-sub">Non-custodial · Device only</div></div>
+    <div class="sett-badge">Secured</div>
+   </div>
+  </div>
+
+  <div class="sett-section" style="padding-top:8px">
+   <div class="stitle" style="padding:0 0 12px">Preferences</div>
+   <div class="sett-item">
+    <div class="sett-icon" style="background:var(--goldg)">🔔</div>
+    <div class="sett-info"><div class="sett-name">Rate Alerts</div><div class="sett-sub">Alert at ₹85.00</div></div>
+    <div class="toggle on" id="alert-toggle" onclick="toggleSwitch(this)"></div>
+   </div>
+   <div class="sett-item">
+    <div class="sett-icon" style="background:var(--greeng)">💰</div>
+    <div class="sett-info"><div class="sett-name">Auto Yield</div><div class="sett-sub">4.8% APY on idle balance</div></div>
+    <div class="toggle on" id="yield-toggle" onclick="toggleSwitch(this)"></div>
+   </div>
+   <div class="sett-item" onclick="showToast('Language: English / Hindi — toggle karein')">
+    <div class="sett-icon" style="background:var(--glass2)">🌐</div>
+    <div class="sett-info"><div class="sett-name">Language</div><div class="sett-sub">English</div></div>
+    <div class="sett-arrow">›</div>
+   </div>
+   <div class="sett-item" onclick="go('yield')">
+    <div class="sett-icon" style="background:var(--goldg)">📊</div>
+    <div class="sett-info"><div class="sett-name">Yield Settings</div><div class="sett-sub">Aave · 4.8% APY</div></div>
+    <div class="sett-arrow">›</div>
+   </div>
+  </div>
+
+  <div class="sett-section" style="padding-top:8px">
+   <div class="stitle" style="padding:0 0 12px">Support</div>
+   <div class="sett-item" onclick="showToast('Help center khul raha hai...')">
+    <div class="sett-icon" style="background:var(--accentg)">❓</div>
+    <div class="sett-info"><div class="sett-name">Help Center</div><div class="sett-sub">FAQs, guides, tutorials</div></div>
+    <div class="sett-arrow">›</div>
+   </div>
+   <div class="sett-item" onclick="showToast('Support chat: support@stablepay.in')">
+    <div class="sett-icon" style="background:var(--greeng)">💬</div>
+    <div class="sett-info"><div class="sett-name">Chat Support</div><div class="sett-sub">Avg response: 2 mins</div></div>
+    <div class="sett-badge">Online</div>
+   </div>
+   <div class="sett-item" onclick="showToast('App version: 1.0.0 · Build: 2025.03 · Stellar Testnet')">
+    <div class="sett-icon" style="background:var(--glass2)">ℹ️</div>
+    <div class="sett-info"><div class="sett-name">About StablePay</div><div class="sett-sub">v1.0.0 · Stellar Network</div></div>
+    <div class="sett-arrow">›</div>
+   </div>
+   <div class="sett-item" onclick="doLogout()">
+    <div class="sett-icon" style="background:var(--redg)">🚪</div>
+    <div class="sett-info"><div class="sett-name" style="color:var(--red)">Sign Out</div><div class="sett-sub">@alexrivera</div></div>
+    <div class="sett-arrow">›</div>
+   </div>
+  </div>
+  <div style="height:30px"></div>
+ </div>
+ <div class="bnav">
+  <div class="bni" onclick="navGo('home',this)"><div class="bni-icon">🏠</div><div class="bni-label">Home</div></div>
+  <div class="bni" onclick="navGo('history',this)"><div class="bni-icon">🕐</div><div class="bni-label">History</div></div>
+  <div class="bni" onclick="navGo('invoice',this)"><div class="bni-icon">🧾</div><div class="bni-label">Invoice</div></div>
+  <div class="bni" onclick="navGo('yield',this)"><div class="bni-icon">💰</div><div class="bni-label">Yield</div></div>
+  <div class="bni on" onclick="navGo('settings',this)"><div class="bni-icon">⚙️</div><div class="bni-label">Settings</div></div>
+ </div>
+</div>
+
+<!-- ══════════ ASSET DETAIL ══════════ -->
+<div id="pg-asset" class="screen">
+ <div class="shd"><div class="back" onclick="go('home')">←</div><div class="shdtitle" id="asset-title">USDT Detail</div></div>
+ <div class="scroll">
+  <div class="infocard" style="text-align:center;padding:24px">
+   <div id="asset-coin-icon" style="width:64px;height:64px;border-radius:20px;background:rgba(14,207,168,0.12);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:800;font-family:var(--font-h);color:var(--green);margin:0 auto 12px">₮</div>
+   <div id="asset-amount" style="font-size:36px;font-weight:700;color:var(--text);font-family:var(--font-h);letter-spacing:-1px">850.00 USDT</div>
+   <div id="asset-inr" style="font-size:16px;color:var(--muted);margin-top:4px">₹71,400.00</div>
+   <div id="asset-change" style="font-size:12px;color:var(--green);margin-top:6px;font-weight:700">▲ +0.01% today</div>
+  </div>
+  <div style="padding:0 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+   <button class="cta" style="margin:0;padding:13px" onclick="go('send')">↗ Send</button>
+   <button class="cta green" style="margin:0;padding:13px;color:#000" onclick="go('receive')">↙ Receive</button>
+   <button class="cta gold" style="margin:0;padding:13px;color:#000;grid-column:span 2" onclick="go('withdraw')">🏦 Withdraw to Bank</button>
+  </div>
+  <div class="acts" style="padding:0 14px">
+   <div class="act"><div class="aicon in">📥</div><div class="ainfo"><div class="atitle">Received from Rahul</div><div class="ameta">Today · 2:45 PM</div></div><div class="aamt"><div class="amain pos">+50</div></div></div>
+   <div class="act"><div class="aicon out">📤</div><div class="ainfo"><div class="atitle">Sent to Priya</div><div class="ameta">3 days ago</div></div><div class="aamt"><div class="amain neg">−30</div></div></div>
+   <div class="act"><div class="aicon in">📥</div><div class="ainfo"><div class="atitle">Received from Client</div><div class="ameta">1 week ago</div></div><div class="aamt"><div class="amain pos">+200</div></div></div>
+  </div>
+  <div style="height:16px"></div>
+ </div>
+</div>
+
+<style>
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+</style>
+<script>
+// ── STATE ──
+let sendCur='', sendCoin='USDT';
+const RATES={USDT:84,USDC:84,DAI:84};
+const ALL_TXN=[
+  {type:'in',  icon:'📥',title:'Received from Rahul',  meta:'Today · 2:45 PM · USDT',    amt:'+₹4,200',  sub:'50 USDT',   cls:'pos'},
+  {type:'out', icon:'📤',title:'Sent to Sarah (US)',    meta:'Yesterday · USDC',           amt:'−₹1,680',  sub:'20 USDC',   cls:'neg'},
+  {type:'invoice',icon:'🧾',title:'Invoice paid — Upwork',meta:'11 Oct · USDC',          amt:'+₹42,000', sub:'500 USDC',  cls:'pos'},
+  {type:'withdraw',icon:'🏦',title:'Withdrawal to HDFC',meta:'12 Oct · Bank',             amt:'₹10,000',  sub:'Pending',   cls:'pend'},
+  {type:'in',  icon:'📥',title:'Received from Mehul',  meta:'8 Oct · USDT',               amt:'+₹8,400',  sub:'100 USDT',  cls:'pos'},
+  {type:'out', icon:'📤',title:'Sent to Jake (US)',     meta:'6 Oct · USDC',               amt:'−₹25,200', sub:'300 USDC',  cls:'neg'},
+  {type:'invoice',icon:'🧾',title:'Invoice — Design work',meta:'4 Oct · USDC',            amt:'+₹16,800', sub:'200 USDC',  cls:'pos'},
+  {type:'withdraw',icon:'🏦',title:'Withdrawal to SBI',  meta:'2 Oct · Bank',             amt:'₹20,000',  sub:'Completed', cls:'neg'},
+];
+
+// ── NAVIGATION ──
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+  const el=document.getElementById('pg-'+id);
+  if(el){el.classList.add('on');}
+  document.getElementById('notif-panel').classList.remove('show');
+  if(id==='send')buildPad();
+  if(id==='history')renderHist('all');
+}
+
+function navGo(id,el){
+  go(id);
+  document.querySelectorAll('.bni').forEach(b=>b.classList.remove('on'));
+  // mark all navs with same page
+  document.querySelectorAll('.bni').forEach(b=>{
+    if(b.getAttribute('onclick')&&b.getAttribute('onclick').includes("'"+id+"'"))b.classList.add('on');
+  });
+}
+
+// ── CLOCK ──
+function updateClock(){
+  const now=new Date();
+  const t=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+  ['clock','clock2'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=t;});
+}
+updateClock();setInterval(updateClock,30000);
+
+// ── LIVE RATE TICKER ──
+const baseRate=84.92;
+setInterval(()=>{
+  const delta=(Math.random()-0.5)*0.2;
+  const r=(baseRate+delta).toFixed(2);
+  const el=document.getElementById('live-rate');
+  if(el)el.textContent='₹'+r;
+},5000);
+
+// ── NUMPAD ──
+function buildPad(){
+  const p=document.getElementById('send-pad');
+  if(!p)return;p.innerHTML='';sendCur='';updSend();
+  ['1','2','3','4','5','6','7','8','9','.','0','⌫'].forEach(k=>{
+    const d=document.createElement('div');d.className='nk';d.textContent=k;
+    d.onclick=()=>pressKey(k);p.appendChild(d);
+  });
+}
+function pressKey(k){
+  if(k==='⌫'){sendCur=sendCur.slice(0,-1);}
+  else if(k==='.'&&sendCur.includes('.'))return;
+  else if(sendCur.length>=8)return;
+  else sendCur+=k;
+  updSend();
+}
+function updSend(){
+  const v=parseFloat(sendCur)||0;
+  const d=document.getElementById('send-disp');
+  const lbl=document.getElementById('send-coinlbl');
+  const inr=document.getElementById('send-inr');
+  if(d)d.textContent=sendCur||'0';
+  if(lbl)lbl.textContent=sendCoin;
+  if(inr)inr.textContent='≈ ₹'+((v*RATES[sendCoin]).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2}));
+}
+function selCoin(el,c){
+  el.closest('.ctabs').querySelectorAll('.ctab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');sendCoin=c;updSend();
+}
+
+// ── SEND FLOW ──
+function openSendConfirm(){
+  const rec=document.getElementById('send-rec').value.trim();
+  if(!sendCur||parseFloat(sendCur)===0){showToast('Amount daalo pehle!');return;}
+  if(!rec){showToast('Recipient ka number daalo!');return;}
+  document.getElementById('conf-to').textContent=rec.length>22?rec.slice(0,20)+'…':rec;
+  document.getElementById('conf-amt').textContent=sendCur+' '+sendCoin+' (₹'+(parseFloat(sendCur)*RATES[sendCoin]).toLocaleString('en-IN')+')';
+  openModal('send-confirm-overlay');
+}
+function confirmSend(){
+  closeModal('send-confirm-overlay');
+  const rec=document.getElementById('send-rec').value.trim();
+  document.getElementById('ss-amt').textContent=sendCur+' '+sendCoin;
+  document.getElementById('ss-to').textContent=rec.length>22?rec.slice(0,20)+'…':rec;
+  document.getElementById('ss-hash').textContent='stellar:'+Math.random().toString(16).slice(2,12).toUpperCase()+'…'+Math.random().toString(16).slice(2,6).toUpperCase();
+  go('send-success');
+}
+
+// ── WITHDRAW ──
+function calcWithdraw(){
+  const v=parseFloat(document.getElementById('w-amt').value)||0;
+  document.getElementById('w-inr-calc').textContent='₹'+(v*84.92).toLocaleString('en-IN',{maximumFractionDigits:0});
+}
+function doWithdraw(){
+  const amt=document.getElementById('w-amt').value.trim();
+  const bank=document.getElementById('w-bank').value;
+  if(!amt||parseFloat(amt)<6){showToast('Minimum ₹500 (approx 6 USDC) withdraw karo');return;}
+  document.getElementById('ws-amt').textContent=amt+' USDC = ₹'+(parseFloat(amt)*84.92).toLocaleString('en-IN',{maximumFractionDigits:0});
+  document.getElementById('ws-bank').textContent=bank;
+  go('withdraw-success');
+}
+
+// ── INVOICE ──
+function calcInvINR(){
+  const v=parseFloat(document.getElementById('inv-amt').value)||0;
+  document.getElementById('inv-usd-show').textContent='$'+v+' USDC (≈ ₹'+(v*84.92).toLocaleString('en-IN',{maximumFractionDigits:0})+')';
+}
+function genInvoice(){
+  const c=document.getElementById('inv-client').value.trim();
+  const a=document.getElementById('inv-amt').value.trim();
+  if(!c){showToast('Client name daalo!');return;}
+  if(!a||parseFloat(a)<=0){showToast('Amount daalo!');return;}
+  const n='INV-'+Date.now().toString().slice(-5);
+  document.getElementById('inv-link-txt').textContent='stablepay.app/inv/'+n;
+  document.getElementById('inv-result').style.display='block';
+  showToast('Invoice created ✓ '+n);
+}
+function copyInvLink(){
+  const txt=document.getElementById('inv-link-txt').textContent;
+  navigator.clipboard.writeText(txt).catch(()=>{});
+  showToast('Invoice link copied! ✓');
+}
+function shareInvWA(){showToast('WhatsApp pe invoice link share kiya! ✓');}
+
+// ── RECEIVE ──
+function copyLink(){
+  navigator.clipboard.writeText('stablepay.app/pay/alexrivera').catch(()=>{});
+  showToast('Payment link copied! ✓');
+}
+function copyAddr(){
+  navigator.clipboard.writeText('GDQP2KPQGKIHYJGXNUIY4WKZB...WKDZ').catch(()=>{});
+  showToast('Wallet address copied! ✓');
+}
+function shareWA(){showToast('WhatsApp pe payment link share kiya! ✓');}
+
+// ── HISTORY ──
+function renderHist(filter){
+  const list=document.getElementById('hist-list');
+  if(!list)return;
+  const filtered=filter==='all'?ALL_TXN:ALL_TXN.filter(t=>t.type===filter||(filter==='received'&&t.type==='in')||(filter==='sent'&&t.type==='out'));
+  list.innerHTML=filtered.map(t=>`
+    <div class="act" onclick="showToast('Transaction details: ${t.title}')">
+      <div class="aicon ${t.type==='in'?'in':t.type==='out'?'out':t.type==='withdraw'?'bank':'inv'}">${t.icon}</div>
+      <div class="ainfo"><div class="atitle">${t.title}</div><div class="ameta">${t.meta}</div></div>
+      <div class="aamt"><div class="amain ${t.cls}">${t.amt}</div><div class="asub">${t.sub}</div></div>
+    </div>`).join('');
+}
+function filterHist(el,f){
+  document.querySelectorAll('.hf-chip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');renderHist(f);
+}
+
+// ── ASSET DETAIL ──
+const ASSET_DATA={
+  USDT:{icon:'₮',color:'var(--green)',bg:'rgba(14,207,168,0.12)',amt:'850.00 USDT',inr:'₹71,400.00',chg:'▲ +0.01% today',chgcls:'up'},
+  USDC:{icon:'$',color:'var(--accent2)',bg:'rgba(79,110,247,0.12)',amt:'420.00 USDC',inr:'₹35,280.00',chg:'▲ +0.02% today',chgcls:'up'},
+  DAI: {icon:'◈',color:'var(--gold)',bg:'rgba(240,180,41,0.12)',amt:'212.00 DAI',inr:'₹17,820.00',chg:'▼ 0.00% today',chgcls:'dn'},
+};
+function showAsset(coin,amt,inr,chg){
+  const d=ASSET_DATA[coin];if(!d)return;
+  document.getElementById('asset-title').textContent=coin+' Details';
+  const iconEl=document.getElementById('asset-coin-icon');
+  iconEl.textContent=d.icon;iconEl.style.color=d.color;iconEl.style.background=d.bg;
+  document.getElementById('asset-amount').textContent=d.amt;
+  document.getElementById('asset-inr').textContent=d.inr;
+  const chgEl=document.getElementById('asset-change');
+  chgEl.textContent=d.chg;chgEl.style.color=d.chgcls==='up'?'var(--green)':'var(--red)';
+  go('asset');
+}
+
+// ── SETTINGS HELPERS ──
+function toggleSwitch(el){el.classList.toggle('on');showToast((el.classList.contains('on')?'Enabled':'Disabled')+' ✓');}
+function doLogout(){showToast('Logged out · Wallet secured on device ✓');}
+
+// ── NOTIFICATION ──
+function toggleNotif(){document.getElementById('notif-panel').classList.toggle('show');}
+function closeNotif(){document.getElementById('notif-panel').classList.remove('show');showToast('Notification marked as read');}
+
+// ── MODALS ──
+function openModal(id){document.getElementById(id).classList.add('show');}
+function closeModal(id){document.getElementById(id).classList.remove('show');}
+function selAlert(el){el.closest('.ctabs,div').querySelectorAll('.ctab').forEach(t=>t.classList.remove('on'));el.classList.add('on');}
+function setAlert(){const r=document.getElementById('alert-rate').value;closeModal('rate-overlay');showToast('Alert set: USD = ₹'+r+' 🔔');}
+
+// ── TOAST ──
+let toastTimer=null;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  if(toastTimer)clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ── CLOSE NOTIF ON OUTSIDE CLICK ──
+document.addEventListener('click',e=>{
+  const panel=document.getElementById('notif-panel');
+  const btn=document.querySelector('.notif-btn');
+  if(panel.classList.contains('show')&&!panel.contains(e.target)&&e.target!==btn&&!btn.contains(e.target)){
+    panel.classList.remove('show');
+  }
+});
+
+// Build numpad on load
+buildPad();
+</script>
+</body>
+</html>
